@@ -174,4 +174,4 @@ cython_debug/
 .pypirc
 
 # Mac stuff:
-.DS_Stire
+.DS_Store
