@@ -1,0 +1,8 @@
+lxml
+flask
+html5lib
+selenium
+langchain
+python-dotenv
+beautifulsoup4
+langchain_ollama
