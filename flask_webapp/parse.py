@@ -5,14 +5,14 @@
     The parsing process is done in batches, and the results are collected and returned as a single string.
 
     Need to have ollama downloaded and running https://ollama.com/download
-    Download a model in command line: 'ollama pull llama3.2' https://github.com/ollama/ollama
+    Download a model in command line: 'ollama pull llama3.2' https://github.com/ollama  /ollama
     Welcome to use other models or OpenAI but this is free *teehee*
     Possible tutorial https://python.langchain.com/docs/integrations/llms/openai/
 """
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 
-model = OllamaLLM(model="llama3.2")
+model = OllamaLLM(model="llama3.1")
 
 template = (
     "You are tasked with extracting specific information from the following text content: {dom_content}. "
