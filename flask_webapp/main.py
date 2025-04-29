@@ -7,9 +7,10 @@
         2. /parse: Accepts a POST request with the scraped content and a description for parsing, 
                     and returns the parsed content using the Ollama LLM.
 """
-from parse import parse_with_ollama
+from components.crawler import get_all_links
+from components.parse import parse_with_ollama
 from flask import Flask, request, jsonify, render_template
-from scrape import scrape_website, extract_body_content, clean_body_content, split_dom_content
+from components.scrape import scrape_website, extract_body_content, clean_body_content, split_dom_content
 
 app = Flask(__name__)
 
@@ -17,6 +18,22 @@ app = Flask(__name__)
 def home():
     """Home page"""
     return render_template('home.html')
+
+@app.route('/get_links', methods=['POST'])
+def get_links():
+    try:
+        data = request.get_json()
+        website = data.get('website')
+
+        if not website:
+            return jsonify({'error': 'Website URL is required'}), 400
+
+        # Call the get_all_links function to fetch links
+        links = get_all_links(website)  # Ensure this function is implemented and imported correctly
+
+        return jsonify({'links': links}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/scrape', methods=['POST'])
 def handle_scrape():

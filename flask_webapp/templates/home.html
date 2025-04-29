@@ -6,22 +6,57 @@
     <title>Label Ledger</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
     <script>
-        async function handleScrape(event) {
+        async function handleGetLinks(event) {
             event.preventDefault();
             const website = document.getElementById('website').value;
-
+    
             // Show a loading message
-            const scrapeResultElement = document.getElementById('scrape-result');
-            scrapeResultElement.textContent = 'Scraping in progress... Please wait.';
-
-            const response = await fetch('/scrape', {
+            const linksResultElement = document.getElementById('links-result');
+            linksResultElement.textContent = 'Fetching links... Please wait.';
+    
+            const response = await fetch('/get_links', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ website })
             });
-
+    
             const result = await response.json();
-
+    
+            if (response.ok) {
+                // Populate the links dropdown
+                const linksDropdown = document.getElementById('links-dropdown');
+                linksDropdown.innerHTML = ''; // Clear existing options
+                result.links.forEach(link => {
+                    const option = document.createElement('option');
+                    option.value = link;
+                    option.textContent = link;
+                    linksDropdown.appendChild(option);
+                });
+    
+                document.getElementById('links-section').style.display = 'block';
+                linksResultElement.textContent = 'Links fetched successfully. Please select a link.';
+            } else {
+                linksResultElement.textContent = '';
+                alert(`Error: ${result.error}`);
+            }
+        }
+    
+        async function handleScrape(event) {
+            event.preventDefault();
+            const selectedLink = document.getElementById('links-dropdown').value;
+    
+            // Show a loading message
+            const scrapeResultElement = document.getElementById('scrape-result');
+            scrapeResultElement.textContent = 'Scraping in progress... Please wait.';
+    
+            const response = await fetch('/scrape', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ website: selectedLink })
+            });
+    
+            const result = await response.json();
+    
             if (response.ok) {
                 scrapeResultElement.textContent = JSON.stringify(result.chunks, null, 2);
                 document.getElementById('chunks').value = JSON.stringify(result.chunks);
@@ -31,24 +66,24 @@
                 alert(`Error: ${result.error}`);
             }
         }
-
+    
         async function handleParse(event) {
             event.preventDefault();
             const chunks = document.getElementById('chunks').value;
             const parseDescription = document.getElementById('parse_description').value;
-
+    
             // Show a loading message
             const parseResultElement = document.getElementById('parse-result');
             parseResultElement.textContent = 'Parsing in progress... Please wait.';
-
+    
             const response = await fetch('/parse', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chunks: JSON.parse(chunks), parse_description: parseDescription })
             });
-
+    
             const result = await response.json();
-
+    
             if (response.ok) {
                 parseResultElement.textContent = result.parsed_content;
             } else {
@@ -62,13 +97,24 @@
 <body>
     <h1>Welcome to Label Ledger</h1>
 
-    <!-- Scrape Section -->
-    <form id="scrape-form" onsubmit="handleScrape(event)">
-        <h2>Scrape a Website</h2>
+    <!-- Get Links Section -->
+    <form id="get-links-form" onsubmit="handleGetLinks(event)">
+        <h2>Get Links from a Website</h2>
         <label for="website">Website URL:</label>
         <input type="text" id="website" name="website" required>
-        <button type="submit">Scrape</button>
+        <button type="submit">Get Links</button>
     </form>
+    <pre id="links-result" style="white-space: pre-wrap; background: #f4f4f4; padding: 10px; margin-top: 10px;"></pre>
+
+    <!-- Links Dropdown Section (Initially Hidden) -->
+    <div id="links-section" style="display: none;">
+        <h2>Select a Link to Scrape</h2>
+        <label for="links-dropdown">Available Links:</label>
+        <select id="links-dropdown" name="links-dropdown"></select>
+        <button onclick="handleScrape(event)">Scrape Selected Link</button>
+    </div>
+
+    <!-- Scrape Section -->
     <pre id="scrape-result" style="white-space: pre-wrap; background: #f4f4f4; padding: 10px; margin-top: 10px;"></pre>
 
     <!-- Parse Section (Initially Hidden) -->
@@ -84,4 +130,3 @@
         <pre id="parse-result" style="white-space: pre-wrap; background: #f4f4f4; padding: 10px; margin-top: 10px;"></pre>
     </div>
 </body>
-</html>
