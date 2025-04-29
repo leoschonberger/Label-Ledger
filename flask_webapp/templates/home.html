@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Label Ledger</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
     <script>
         async function handleScrape(event) {
             event.preventDefault();
             const website = document.getElementById('website').value;
+
+            // Show a loading message
+            const scrapeResultElement = document.getElementById('scrape-result');
+            scrapeResultElement.textContent = 'Scraping in progress... Please wait.';
 
             const response = await fetch('/scrape', {
                 method: 'POST',
@@ -18,10 +23,11 @@
             const result = await response.json();
 
             if (response.ok) {
-                document.getElementById('scrape-result').textContent = JSON.stringify(result.chunks, null, 2);
+                scrapeResultElement.textContent = JSON.stringify(result.chunks, null, 2);
                 document.getElementById('chunks').value = JSON.stringify(result.chunks);
                 document.getElementById('parse-section').style.display = 'block';
             } else {
+                scrapeResultElement.textContent = '';
                 alert(`Error: ${result.error}`);
             }
         }
@@ -30,6 +36,10 @@
             event.preventDefault();
             const chunks = document.getElementById('chunks').value;
             const parseDescription = document.getElementById('parse_description').value;
+
+            // Show a loading message
+            const parseResultElement = document.getElementById('parse-result');
+            parseResultElement.textContent = 'Parsing in progress... Please wait.';
 
             const response = await fetch('/parse', {
                 method: 'POST',
@@ -40,13 +50,15 @@
             const result = await response.json();
 
             if (response.ok) {
-                document.getElementById('parse-result').textContent = JSON.stringify(result.parsed_content, null, 2);
+                parseResultElement.textContent = result.parsed_content;
             } else {
+                parseResultElement.textContent = '';
                 alert(`Error: ${result.error}`);
             }
         }
     </script>
 </head>
+
 <body>
     <h1>Welcome to Label Ledger</h1>
 

@@ -3,7 +3,7 @@
     It extracts specific information from the DOM content based on a provided description.
     The script uses the Langchain library to create a prompt template and chain it with the Ollama model.
     The parsing process is done in batches, and the results are collected and returned as a single string.
-    
+
     Need to have ollama downloaded and running https://ollama.com/download
     Download a model in command line: 'ollama pull llama3.2' https://github.com/ollama/ollama
     Welcome to use other models or OpenAI but this is free *teehee*
