@@ -22,21 +22,27 @@ def scrape_website(website):
         return html
     
     finally:
+        print('Finished scraping...')
         driver.quit()
 
 def extract_body_content(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     body_content = soup.find('body')
     if body_content:
+        print('Extracting body content...')
         return body_content.get_text()
+    
+    print('No body content found.')
     return None
 
 def clean_body_content(body_content):
+    print('Cleaning body content...')
     soup = BeautifulSoup(body_content, 'html.parser')
     for script_or_style in soup(['script', 'style']):
         script_or_style.decompose()
     cleaned_content = soup.get_text(separator='\n')
-    cleaned_content = '\n'.join(line.strip() for line in cleaned_content.splitlines() if line.strip())
+    cleaned_content = '\n '.join(line.strip() for line in cleaned_content.splitlines() if line.strip())
+    print('Finished cleaning body content.')
     return cleaned_content
 
 def split_dom_content(dom_content, max_length=6000):

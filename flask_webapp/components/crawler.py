@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import selenium.webdriver as webdriver
 
 def get_all_links(website):
-    print(f'Crawling {website} for links...')
+    print(f'Crawling {website}...')
 
     options = webdriver.FirefoxOptions()
     options.add_argument("-headless")
@@ -14,7 +14,7 @@ def get_all_links(website):
 
     try:
         driver.get(website)
-        print('Page loaded...')
+        print('Website loaded...')
         html = driver.page_source
         return extract_links(html)
     
@@ -22,6 +22,7 @@ def get_all_links(website):
         driver.quit()
 
 def extract_links(html_content):
+    print('Extracting links...')
     soup = BeautifulSoup(html_content, 'html.parser')
     links = [a.get('href') for a in soup.find_all('a', href=True)]
     return links

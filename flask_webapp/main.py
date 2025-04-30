@@ -2,14 +2,16 @@
     Flask Web Application for Scraping and Parsing
     This script sets up a Flask web application that allows users to scrape a website and parse its content.
     The application provides two main endpoints:
-        1. /scrape: Accepts a POST request with a website URL, scrapes the content, and returns 
+        1. /get_links: Accepts a POST request with a website URL, scrapes the content, and returns 
+                       the links found on the page.
+        2. /scrape: Accepts a POST request with a website URL, scrapes the content, and returns 
                     the cleaned and split DOM content.
-        2. /parse: Accepts a POST request with the scraped content and a description for parsing, 
+        3. /parse: Accepts a POST request with the scraped content and a description for parsing, 
                     and returns the parsed content using the Ollama LLM.
 """
 from components.crawler import get_all_links
-from components.parse import parse_with_ollama
 from flask import Flask, request, jsonify, render_template
+from components.parse import parse_dom_ollama, parse_links_ollama
 from components.scrape import scrape_website, extract_body_content, clean_body_content, split_dom_content
 
 app = Flask(__name__)
@@ -21,17 +23,19 @@ def home():
 
 @app.route('/get_links', methods=['POST'])
 def get_links():
+    data = request.get_json()
+    
+    if not data or 'website' not in data:
+        return jsonify({"error": "Missing website URL"}), 400
+    
     try:
-        data = request.get_json()
-        website = data.get('website')
+        links = get_all_links(data['website'])
+        links = [data['website'] + link if not link.startswith('https://') else link for link in links]
 
-        if not website:
-            return jsonify({'error': 'Website URL is required'}), 400
+        parsed_links = parse_links_ollama(links)
 
-        # Call the get_all_links function to fetch links
-        links = get_all_links(website)  # Ensure this function is implemented and imported correctly
-
-        return jsonify({'links': links}), 200
+        return jsonify({'links': parsed_links}), 200
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -44,7 +48,6 @@ def handle_scrape():
         return jsonify({"error": "Missing website URL"}), 400
     
     try:
-        # Scrape website and process content
         html = scrape_website(data['website'])
         body_content = extract_body_content(html)
         cleaned_content = clean_body_content(body_content)
@@ -69,7 +72,7 @@ def handle_parse():
         return jsonify({"error": "Missing required fields (chunks or parse_description)"}), 400
     
     try:
-        parsed_content = parse_with_ollama(data['chunks'], data['parse_description'])
+        parsed_content = parse_dom_ollama(data['chunks'], data['parse_description'])
         return jsonify({
             "message": "Parsing successful",
             "parsed_content": parsed_content
