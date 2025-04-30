@@ -9,10 +9,12 @@
         3. /parse: Accepts a POST request with the scraped content and a description for parsing, 
                     and returns the parsed content using the Ollama LLM.
 """
+import random
 from components.crawler import get_all_links
 from flask import Flask, request, jsonify, render_template
 from components.parse import parse_dom_ollama, parse_links_ollama
 from components.scrape import scrape_website, extract_body_content, clean_body_content, split_dom_content
+
 
 app = Flask(__name__)
 
@@ -78,6 +80,28 @@ def handle_parse():
             "parsed_content": parsed_content
         })
     
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/run_all', methods=['GET'])
+def run_all():
+    url = 'https://www.si.com/mlb/giants'
+    try:
+        all_links = get_all_links(url)
+        all_links = [url + link if not link.startswith('http') else link for link in all_links]
+        parsed_links = parse_links_ollama(all_links)
+        chosen_links = random.sample(parsed_links, 5)
+        results = []
+
+        for link in chosen_links:
+            html = scrape_website(link)
+            body_content = extract_body_content(html)
+            cleaned_content = clean_body_content(body_content)
+            chunks = split_dom_content(cleaned_content)
+            parsed = parse_dom_ollama(chunks, "summarize the article in detail")
+            results.append({"link": link, "summary": parsed})
+
+        return jsonify({"summaries": results}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

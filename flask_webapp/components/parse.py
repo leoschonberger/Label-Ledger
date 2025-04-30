@@ -9,18 +9,26 @@
     Welcome to use other models or OpenAI but this is free *teehee*
     Possible tutorial https://python.langchain.com/docs/integrations/llms/openai/
 """
+import concurrent.futures
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 
 model = OllamaLLM(model="llama3.1")
 
 template_links = (
-    "You are tasked with extracting specific information from the following text content: {dom_content}. "
-    "Please follow these instructions carefully: \n\n"
-    "1. **Extract Information:** Only extract the information that directly matches the provided description: {parse_description}. "
-    "2. **No Extra Content:** Do not include any additional text, comments, or explanations in your response. "
-    "3. **Empty Response:** If no information matches the description, return an empty string ('')."
-    "4. **Direct Data Only:** Your output should contain only the data that is explicitly requested, with no other text."
+    "You are an expert in identifying high-quality article links. Your task is to analyze the following HTML or link snippet and determine whether it points to a top news or feature article:\n\n"
+    "{link}\n\n"
+    "Follow these instructions exactly:\n\n"
+    "1. **Strict Output:** Respond only with 'Valid' if the link meets the criteria above, otherwise respond with 'Invalid'.\n"
+    "2. **No Extra Output:** Do not include any explanation, reasoning, or formatting—only return 'Valid' or 'Invalid'.\n"
+    "3. **Extract Only Top Article URLs:** The link should lead to a prominently featured news or in-depth article, typically found in main headlines, hero sections, or labeled as 'Top Stories', 'Featured', or similar.\n"
+    "4. **No Side or Sponsored Content:** Exclude any links to sidebars, sponsored articles, advertisements, newsletter signups, navigation pages, author bios, or category/tag listings.\n"
+    "5. **Exclude Social Media Links:** Ignore links to platforms like Facebook, Twitter, Instagram, YouTube, etc. Also exclude pure video, podcast, or PDF links unless they are clearly a feature article.\n"
+    "6. **No Multimedia or Download Links:** Exclude links that point to videos, PDFs, podcasts, or other media types unless they clearly represent a feature article.\n"
+    "7. **Only Direct URLs:** Return only the extracted URLs—one per line—with no accompanying text, titles, or descriptions.\n"
+    "8. **No Match Means Empty String:** If no appropriate article URLs are found, return an empty string ('').\n"
+    "9. **Absolute URLs Preferred:** If both relative and absolute URLs are present, prefer absolute URLs. If only relative URLs are available, include them as-is.\n"
+    "10. **Avoid Duplicates:** Do not include duplicate links.\n"
 )
 
 template_dom = (
@@ -35,40 +43,34 @@ template_dom = (
 )
 
 def parse_links_ollama(links):
-    count = min(150, len(links))
-    parsed_links = []
     print(f"Parsing links...")
-    
     prompt = ChatPromptTemplate.from_template(template_links)
     chain = prompt | model
 
-    for i, link in enumerate(links[:count], start=1):
-        response = chain.invoke({
-            "dom_content": link,
-            "parse_description": "Determine if this link is a valid article. Return 'Valid' or 'Invalid' only."
-        })
-        print(f"Parsed link: {i} of {count}")
-        if response.strip() == "Valid":
-            parsed_links.append(link)
+    def process_link(link):
+        response = chain.invoke({"link": link})
+        return link if response.strip() == "Valid" else None
 
-    parsed_links = list(dict.fromkeys(parsed_links))
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = list(executor.map(process_link, links))
+
+    parsed_links = [link for link in results if link is not None]
 
     return parsed_links
 
 def parse_dom_ollama(dom_chunks, parse_description):
-    parsed_results = []
-    print(f"Parsing DOM content: {len(dom_chunks)}...")
-    
+    print("Parsing DOM content...")
     prompt = ChatPromptTemplate.from_template(template_dom)
     chain = prompt | model
 
-    for i, chunk in enumerate(dom_chunks, start=1):
+    def process_chunk(chunk):
         response = chain.invoke({
             'dom_content': chunk,
             'parse_description': parse_description
         })
-        
-        print(f"Parsed batch: {i} of {len(dom_chunks)}")
-        parsed_results.append(response)
-    
-    return '\n '.join(parsed_results)
+        return response
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        results = list(executor.map(process_chunk, dom_chunks))
+
+    return '\n '.join(results)
