@@ -173,5 +173,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Don't want sample data
-news_data.json
+# Mac stuff:
+.DS_Store
