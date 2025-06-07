@@ -6,3 +6,4 @@ langchain
 python-dotenv
 beautifulsoup4
 langchain_ollama
+bs4

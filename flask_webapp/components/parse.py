@@ -13,7 +13,7 @@ import concurrent.futures
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 
-model = OllamaLLM(model="llama3.1")
+model = OllamaLLM(model="llama3.1:8b")
 
 template_links = (
     "You are an expert in identifying high-quality article links. Your task is to analyze the following HTML or link snippet and determine whether it points to a top news or feature article:\n\n"
